@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package raftproto;
+
+option go_package = "./raftproto";
+
+service RaftService {
+    rpc Message (MessageRequest) returns (MessageResponse) {};
+    rpc AppendEntries (AppendRequest) returns (AppendResponse) {};
+    rpc RequestVote (VoteRequest) returns (VoteResponse) {};
+    rpc MakeCommand (CommandRequest) returns (CommandResponse) {};
+}
+
+message MessageRequest {
+    string addr = 1;
+    string message = 2;
+}
+
+message MessageResponse {
+    string addr = 1;
+    string message = 2;
+    string response = 3;
+}
+
+message AppendRequest {
+    int32 term = 1;                 // leader term
+    string leaderId = 2;            // leader id (really ip)
+    int32 prevLogIndex = 3;         // index of log entries immediately preceding new ones
+    int32 prevLogTerm = 4;          // term of prevLogIndex entry
+    repeated Entries entries = 5;   // log entries to store, may be empty for heartbeat
+    int32 leaderCommit = 6;         // leader's commitIndex
+}
+
+message Entries {
+    int32 term = 1;                 // term of the entry
+    string command = 2;             // the data of the entry
+}
+
+message AppendResponse {
+    int32 term = 1;                 // currentTerm, for the leader to update itself
+    bool success = 2;               // true if follower contained entry matching prevLogIndex and prevLogTerm
+}
+
+message VoteRequest {
+    int32 term = 1;                 // candidate's term
+    string candidateId = 2;         // id of candidate requesting vote
+    int32 lastLogIndex = 3;         // index of candidate's last log entry
+    int32 lastLogTerm = 4;          // term of candidate's last log entry
+}
+
+message VoteResponse {
+    int32 term = 1;                 // currentTerm, for the candidate to update itself
+    bool voteGranted = 2;           // true if the candidate received the vote
+}
+
+message CommandRequest {
+    string ip = 1;
+    string command = 2;
+}
+
+message CommandResponse {
+    string result = 1;
+}
+
+
+// protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ./raftnode.proto
